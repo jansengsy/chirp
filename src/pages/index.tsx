@@ -4,8 +4,10 @@ import Head from "next/head";
 import { api } from "~/utils/api";
 
 export default function Home() {
-  const hello = api.post.hello.useQuery({ text: "from tRPC" });
   const { user, isSignedIn } = useUser();
+
+  // Use the router to get the posts from the database
+  const { data } = api.post.getAll.useQuery();
 
   return (
     <>
@@ -23,6 +25,9 @@ export default function Home() {
               <SignOutButton />
             </>
           )}
+        </div>
+        <div>
+          {data?.map((post) => (<div key={post.id}>{post.content}</div>))}
         </div>
       </main>
     </>
