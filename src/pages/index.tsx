@@ -6,6 +6,7 @@ import { type RouterOutputs, api } from "~/utils/api";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import Image from "next/image";
+import { LoadingPage } from "~/components/loading";
 dayjs.extend(relativeTime);
 
 const CreatePostWizard = () => {
@@ -53,13 +54,30 @@ const PostView = (props: PostWithUser) => {
   );
 };
 
-export default function Home() {
-  const { user, isSignedIn } = useUser();
-
+const Feed = () => {
   // Use the router to get the posts from the database
-  const { data, isLoading } = api.post.getAll.useQuery();
-  if (isLoading) return <div>Loading...</div>;
-  if (!data) return <div>Something went wrong...</div>;
+  const { data, isLoading: postsLoading } = api.post.getAll.useQuery();
+
+  if (postsLoading) return <LoadingPage />;
+  if (!data) return <div>Something went wrong!</div>;
+
+  return (
+    <div className="flex flex-col">
+      {data?.map((fullPost) => (
+        <PostView key={fullPost.post.id} {...fullPost} />
+      ))}
+    </div>
+  );
+};
+
+export default function Home() {
+  const { isLoaded: userLoaded, isSignedIn } = useUser();
+
+  // Start fetching asap
+  api.post.getAll.useQuery();
+
+  // return empty div if both aren't loaded yet
+  if (!userLoaded) return <div />;
 
   return (
     <>
@@ -76,17 +94,9 @@ export default function Home() {
                 <SignInButton />
               </div>
             )}
-            {!!isSignedIn && (
-              <>
-                <CreatePostWizard />
-              </>
-            )}
+            {!!isSignedIn && <CreatePostWizard />}
           </div>
-          <div className="flex flex-col">
-            {data?.map((fullPost) => (
-              <PostView key={fullPost.post.id} {...fullPost} />
-            ))}
-          </div>
+          <Feed />
         </div>
       </main>
     </>
